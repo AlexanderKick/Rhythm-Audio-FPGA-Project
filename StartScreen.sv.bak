@@ -1,0 +1,87 @@
+
+//------------------------------------------------------------------------------
+// Company:          UIUC ECE Dept.
+// Engineer:         Stephen Kempf
+//
+// Create Date:    17:44:03 10/08/06
+// Design Name:    ECE 385 Lab 6 Given Code - Incomplete ISDU
+// Module Name:    ISDU - Behavioral
+//
+// Comments:
+//    Revised 03-22-2007
+//    Spring 2007 Distribution
+//    Revised 07-26-2013
+//    Spring 2015 Distribution
+//    Revised 02-13-2017
+//    Spring 2017 Distribution
+//------------------------------------------------------------------------------
+
+
+module StartScreen (   input logic         Clk, 
+									Reset,
+									J_Press,
+				  
+				// Need Standing still => punch1 => punch2 => punch3
+				output logic [1:0] frame
+				);
+
+	enum logic [2:0] {  Halted, 
+						Start2, 
+						Start3, 
+                        Done
+						}   State, Next_state;   // Internal state logic
+						
+						
+
+	
+	always_ff @ (posedge Clk)
+	begin 
+		if (Reset)
+			State <= Halted;
+		else	
+			State <= Next_state;
+	end
+  
+	always_comb
+	begin 
+		// Default next state is staying at current state
+		Next_state = State;
+		
+		frame = 2'b00;
+		
+
+		// Any states involving SRAM require more than one clock cycles.
+		// Assign next state
+		unique case (State)
+			Halted : 
+				if (J_Press) 
+					Next_state = Start2;
+            Start2 :
+                Next_state = Start3;
+            Start3 :
+                Next_state = Done;
+            Done :
+                Next_state = Done;
+
+
+			default : ;
+
+		endcase
+		
+		// Assign control signals based on current state
+		case (State)
+			Halted: 
+				frame = 2'01;
+			Start2 : 
+				frame = 2'10;
+			Start3 : 
+				frame = 2'11;
+			Done :
+                frame = 2'00;
+
+			default : ;
+		endcase
+	end 
+
+	
+endmodule

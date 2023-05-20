@@ -1,0 +1,91 @@
+//-------------------------------------------------------------------------
+//    Ball.sv                                                            --
+//    Viral Mehta                                                        --
+//    Spring 2005                                                        --
+//                                                                       --
+//    Modified by Stephen Kempf 03-01-2006                               --
+//                              03-12-2007                               --
+//    Translated by Joe Meng    07-07-2013                               --
+//    Fall 2014 Distribution                                             --
+//                                                                       --
+//    For use with ECE 298 Lab 7                                         --
+//    UIUC ECE Department                                                --
+//-------------------------------------------------------------------------
+
+
+module  combo ( input Reset, frame_clk, BallEN,
+					input [4:0] frame,
+              output [9:0]  BallX, BallY, BallS,
+              output miss_f, perfect_f, keep_on, activate );
+   
+   logic [9:0] Ball_X_Pos, Ball_Y_Pos, Ball_Size, Ball_Y_Motion;
+	 
+   parameter [9:0] Ball_X_Center= 300;  // Center position on the X axis
+   parameter [9:0] Ball_Y_Center= 288;  // Center position on the Y axis
+
+   logic keep_moving;
+   logic pulse;
+   logic trigger;
+  
+   always_ff @ (posedge Reset or posedge frame_clk )
+   begin
+       if (Reset)  // Asynchronous Reset
+       begin 
+         Ball_Y_Pos <= Ball_Y_Center;
+         Ball_X_Pos <= Ball_X_Center;
+         Ball_Y_Motion <= 10'b0;
+         Ball_Size <= 10'b0;
+         keep_moving <= 1'b0;
+       end
+        else if(BallEN) begin
+            keep_moving <= 1'b1;
+        end
+        else if(keep_moving && !pulse) begin
+            if(Ball_Size <= 10'd70)
+                Ball_Size <= Ball_Size + 1'b1;
+            else
+                pulse <= 1'b1;
+        end
+        else if(!trigger)begin
+            if(Ball_Size >= 1'b0)
+                Ball_Size <= Ball_Size - 1'b1;
+            else begin
+                trigger <= 1'b1;
+            end
+        end
+        else if(trigger) begin
+            Ball_Size <= 10'd60;
+            if(frame == 4'b1110) begin
+                Ball_Y_Motion <= -30;
+            end
+            else if(Ball_Y_Pos <= 10) begin
+                trigger <= 1'b0;
+                pulse <= 1'b0;
+                keep_moving <= 1'b0;
+                Ball_Y_Pos <= Ball_Y_Center;
+                Ball_X_Pos <= Ball_X_Center;
+                Ball_Y_Motion <= 10'b0;
+                Ball_Size <= 10'b0;
+            end
+        end
+
+        Ball_Y_Pos <= Ball_Y_Pos + Ball_Y_Motion;
+   end
+
+			
+   assign BallX = Ball_X_Pos;
+  
+   assign BallY = Ball_Y_Pos;
+  
+   assign BallS = Ball_Size;
+
+   assign miss_f = miss_flag;
+
+   assign perfect_f = punch_flag;
+
+   assign keep_on = keep_moving;
+
+   assign activate = trigger;
+
+endmodule
+

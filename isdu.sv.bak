@@ -1,0 +1,230 @@
+
+//------------------------------------------------------------------------------
+// Company:          UIUC ECE Dept.
+// Engineer:         Stephen Kempf
+//
+// Create Date:    17:44:03 10/08/06
+// Design Name:    ECE 385 Lab 6 Given Code - Incomplete ISDU
+// Module Name:    ISDU - Behavioral
+//
+// Comments:
+//    Revised 03-22-2007
+//    Spring 2007 Distribution
+//    Revised 07-26-2013
+//    Spring 2015 Distribution
+//    Revised 02-13-2017
+//    Spring 2017 Distribution
+//------------------------------------------------------------------------------
+
+
+module ISDU (   input logic         Clk, 
+									Reset,
+									J_Press,
+									K_Press,
+				  
+				// Need Standing still => punch1 => punch2 => punch3
+				output logic [1:0] frame
+				);
+
+	enum logic [4:0] {  Halted, 
+						Idle, 
+						P_1, 
+						P_2, 
+						P_3, 
+						H3_1,
+						H3_2,
+						H3_3,
+						H3_4,
+						C_1,
+						C_2,
+						C_3,
+						C_4,
+						C_5,
+						C_6,
+						C_7,
+						C_8,
+						C_9,
+						C_10,
+						Hold
+						}   State, Next_state;   // Internal state logic
+		
+	always_ff @ (posedge Clk)
+	begin
+		if (Reset) 
+			State <= Halted;
+		else 
+			State <= Next_state;
+	end
+   
+	always_comb
+	begin 
+		// Default next state is staying at current state
+		Next_state = State;
+		
+		frame = 2'b00;
+		// Default controls signal values
+		// IDLE = 1'b0;	// Idle animation 0 
+
+		// PUNCH_1 = 1'b0; // Full punch 1
+		// PUNCH_2 = 1'b0;	// Fist slightly back 2
+		// PUNCH_3 = 1'b0; // Fist almost all the way back 3
+
+		// HIT3_1 = 1'b0;	// Extends right punch 4
+		// HIT3_2 = 1'b0;	// Same punch without motion marks 5
+		// HIT3_3 = 1'b0;	// Pulls back punch 6
+		// HIT3_4 = 1'b0;	// Pulls back punch fully 7
+
+		// CRJAB_1 = 1'b0;	// First crouch 8
+		// CRJAB_2 = 1'b0;	// Next crouch 9
+		// CRJAB_3 = 1'b0; // Final crouch 10
+
+		// KICK_1 = 1'b0;	// Kick 11
+		// KICK_2 = 1'b0;	// Kick w/ motion 12
+		// KICK_3 = 1'b0;	// Kick w/ fist 13
+
+		// UPCUT_1 = 1'b0;	// Uppercut with motion 14
+		// UPCUT_2 = 1'b0;	// Uppercut without motion 15
+
+		// FAIL_1 = 1'b0;	// Slip 16
+		// FAIL_2 = 1'b0;	// Slip rotated 17
+		// FAIL_3 = 1'b0;	// Slip rotated again 18
+
+		// Any states involving SRAM require more than one clock cycles.
+		// Assign next state
+		unique case (State)
+			Halted : 
+				if (K_Press) 
+					Next_state = C_1;
+				else if(J_Press)
+					Next_state = P_1;
+				else
+					Next_state = I_1;
+
+			P_1 :
+				Next_state = P_2;
+			P_2 :
+				Next_state = P_3;
+			P_3 :
+				Next_state = Hold;
+
+			H3_1 :
+				Next_state = H3_2;
+			H3_2 :
+				Next_state = H3_3;
+			H3_3 :
+				Next_state = H3_4;
+			H3_4 :
+				Next_state = Hold;
+
+			C_1 :
+				if(K_Press)
+					Next_state = C_2;
+				// else
+				// 	Next_state = FAIL_1;
+			C_2 :
+				if(K_Press)
+					Next_state = C_3;
+				// else
+				// 	Next_state = FAIL_1;
+			C_3 :
+				if(K_Press)
+					Next_state = C_4;
+				// else
+				// 	Next_state = FAIL_1;
+			C_4 :
+				if(K_Press)
+					Next_state = C_5;
+				// else
+				// 	Next_state = FAIL_1;
+			C_5 :
+				if(K_Press)
+					Next_state = C_6;
+				// else
+				// 	Next_state = FAIL_1;
+			C_6 :
+				if(K_Press)
+					Next_state = C_7;
+				// else
+				// 	Next_state = FAIL_1;
+			C_7 :
+				if(K_Press)
+					Next_state = C_8;
+				else
+					Next_state = FAIL_1;
+			C_8 :
+				if((K_Press)) // Will need to be let go here
+					Next_state = C_9;
+				// else
+				// 	Next_state = FAIL_1;
+			C_9 :
+				Next_state = C_10;
+			C_10 :
+				Next_state = Hold;
+
+			I_1 :
+				if (K_Press) 
+					Next_state = C_1;
+				else if(J_Press)
+					Next_state = P_1;
+				else
+					Next_state = Halted;
+
+			Hold :
+				if(J_Press || K_Press)
+					Next_state = Hold;
+				else
+					Next_state = Halted;
+
+			default : ;
+
+		endcase
+		
+		// Assign control signals based on current state
+		case (State)
+			Halted: 
+				frame = 2'b00;
+			P_1 : 
+				frame = 2'b01;
+			P_2 : 
+				frame = 2'b00;
+			P_3 : 
+				frame = 2'b00;
+
+			H3_1 :
+				frame = 2'b00;
+			H3_2 :
+				frame = 2'b00;
+			H3_3 :
+				frame = 2'b00;
+			H3_4 :
+				frame = 2'b00;
+
+			C_1 : 
+				frame = 2'b00;
+			C_2 : 
+				frame = 2'b00;
+			C_3 : 
+				frame = 2'b00;
+			C_4 : 
+				frame = 2'b00;
+			C_5 : 
+				frame = 2'b00;
+			C_6 : 
+				frame = 2'b00;
+			C_7 : 
+				frame = 2'b00;
+			C_8 : 
+				frame = 2'b00;
+			C_9 : 
+				frame = 2'b00;
+			C_10 : 
+				frame = 2'b00;
+			Idle :
+				frame = 2'b00;
+
+			default : ;
+		endcase
+	end 
+
+	
+endmodule

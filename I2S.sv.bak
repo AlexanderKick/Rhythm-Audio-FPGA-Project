@@ -1,0 +1,55 @@
+module I2S ( input logic mclk,          // System clock
+    input logic Reset,          // Reset signal
+    input [31:0] din_l,   // Audio data input (32 bits)
+    input [31:0] din_r,
+    input logic sclk,         // Serial clock input
+    input logic lrclk,        // LR clock input
+    output logic dout         // Audio data output
+);
+
+ reg [31:0] data_reg_l;    // Left channel data register
+  reg [31:0] data_reg_r;    // Right channel data register
+  reg [4:0] bitcount_reg;   // Bit counter (counts from 0 to 31)
+  reg lrclk_reg;            // LR clock state register (holds previous LR clock value)
+  reg sclk_reg;             // Serial clock state register (holds previous SCLK value)
+  
+  always @(posedge mclk) begin
+    // Update LR clock state
+    lrclk_reg <= lrclk;
+    
+    // If LR clock transitioned from low to high, reset bit counter
+    if (lrclk_reg == 1'b0 && lrclk == 1'b1) begin
+      bitcount_reg <= 5'b00;
+    end
+    
+    // Update SCLK state
+    sclk_reg <= sclk;
+    
+    // If SCLK transitioned from low to high, output next bit
+    if (sclk_reg == 1'b0 && sclk == 1'b1) begin
+      // If LR clock is low, output data from left channel register
+      if (lrclk == 1'b0) begin
+        dout <= data_reg_l[31];
+        data_reg_l <= {data_reg_l[30:0], 1'b0}; // Shift in next bit of left channel data
+      end
+      // If LR clock is high, output data from right channel register
+      else begin
+        dout <= data_reg_r[31];
+        data_reg_r <= {data_reg_r[30:0], 1'b0}; // Shift in next bit of right channel data
+      end
+      
+      // Increment bit counter
+      bitcount_reg <= bitcount_reg + 1;
+    end
+    
+    // Parallel load data registers with input data when LR clock is low
+    if (lrclk == 1'b0) begin
+      data_reg_l <= din_l;
+    end
+    else begin
+      data_reg_r <= din_r;
+    end
+  end
+
+
+endmodule

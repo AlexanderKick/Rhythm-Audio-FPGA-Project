@@ -1,0 +1,17 @@
+module register (
+    input logic clk,
+    output logic flag
+);
+
+reg prev_clk;
+
+always @(posedge clk) begin
+    prev_clk <= 1;
+    flag <= prev_clk;
+end
+
+always @(negedge clk) begin
+    prev_clk <= 0;
+end
+
+endmodule
